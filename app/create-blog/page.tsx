@@ -2,13 +2,21 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 
 // Dynamically load our block designer module safely without SSR compilation errors
 const WordPressEditor = dynamic(() => import("@/app/components/WordPressEditor"), { ssr: false });
 
 export default function CreateBlog() {
+
   const router = useRouter();
+  const { data: session, status } = useSession();
+  
+  if(!session){
+    router.push("/login")
+  }
+
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [image, setImage] = useState(""); // 📸 NEW: Holds the thumbnail cover image URL string
