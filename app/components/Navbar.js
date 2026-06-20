@@ -10,8 +10,8 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-gray-800 text-white">
-      {/* Top Navbar */}
+    <nav className="relative bg-gray-800 text-white">
+      {/* Navbar */}
       <div className="h-16 flex items-center justify-between px-4">
         {/* Logo */}
         <Link href="/">
@@ -32,16 +32,19 @@ const Navbar = () => {
                 Home
               </Link>
             </li>
+
             <li>
               <Link className="hover:underline" href="/about">
                 About
               </Link>
             </li>
+
             <li>
               <Link className="hover:underline" href="/blogs">
                 Blogs
               </Link>
             </li>
+
             {session && (
               <li>
                 <Link className="hover:underline" href="/yourblogs">
@@ -51,14 +54,14 @@ const Navbar = () => {
             )}
           </ul>
 
-          {/* Login / Logout Button (always visible) */}
+          {/* Login/Logout Button - Always Visible */}
           <Link href={session ? "/logout" : "/login"}>
             <button className="bg-white text-black font-bold py-1 px-3 rounded hover:bg-gray-200 hover:scale-105 transition">
               {session ? "Logout" : "Login"}
             </button>
           </Link>
 
-          {/* Hamburger Menu Button (mobile only) */}
+          {/* Hamburger Button - Mobile Only */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-2xl font-bold"
@@ -68,15 +71,15 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Floating Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-gray-900 border-t border-gray-700">
-          <ul className="flex flex-col py-3">
+        <div className="md:hidden absolute top-16 right-4 z-50 w-56 overflow-hidden rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
+          <ul className="flex flex-col">
             <li>
               <Link
                 href="/"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-2 hover:bg-gray-700"
+                className="block px-4 py-3 hover:bg-gray-800"
               >
                 Home
               </Link>
@@ -86,7 +89,7 @@ const Navbar = () => {
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-2 hover:bg-gray-700"
+                className="block px-4 py-3 hover:bg-gray-800"
               >
                 About
               </Link>
@@ -96,7 +99,7 @@ const Navbar = () => {
               <Link
                 href="/blogs"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-2 hover:bg-gray-700"
+                className="block px-4 py-3 hover:bg-gray-800"
               >
                 Blogs
               </Link>
@@ -107,7 +110,7 @@ const Navbar = () => {
                 <Link
                   href="/yourblogs"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-2 hover:bg-gray-700"
+                  className="block px-4 py-3 hover:bg-gray-800"
                 >
                   Your Blogs
                 </Link>
