@@ -112,7 +112,9 @@ export default function BlogsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+        
+        {/* Header Section */}
+        <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
             Our Blog Library
           </h1>
@@ -121,6 +123,33 @@ export default function BlogsPage() {
           </p>
         </div>
 
+        {/* ✨ DESIGNED CREATE NEW BLOG BUTTON */}
+        <div className="flex justify-center sm:justify-end mb-12">
+          <Link href="/create-blog">
+            <button className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 px-7 py-3.5 text-white font-semibold shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/40 cursor-pointer flex items-center gap-2 border border-purple-500/30">
+              {/* Shine / Light effect on hover */}
+              <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+
+              {/* Animated Plus Icon */}
+              <svg
+                className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span className="relative">Create New Blog</span>
+            </button>
+          </Link>
+        </div>
+
+        {/* Blogs Grid */}
         {blogs.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-purple-50 max-w-lg mx-auto">
             <p className="text-gray-500 text-lg font-medium">
@@ -141,7 +170,7 @@ export default function BlogsPage() {
                   <Link href={`/blogs/${blog._id}`}>
                     <div className="relative h-48 w-full overflow-hidden bg-gray-100">
                       <img
-                        src={blog.image || FALLBACK_IMAGE}
+                        src={blog.image || coverImage || FALLBACK_IMAGE}
                         alt={blog.title}
                         className="h-full w-full object-cover transition duration-300 hover:scale-105"
                         onError={(e) => {
@@ -171,12 +200,9 @@ export default function BlogsPage() {
 
                       {/* Title */}
                       <h2 className="text-xl font-bold text-gray-900 mb-3 leading-snug tracking-tight line-clamp-2">
-                        <Link
-                          href={`/blogs/${blog._id}`}
-                          className="hover:text-purple-600 transition"
-                        >
+                        <span className="hover:text-purple-600 transition">
                           {blog.title}
-                        </Link>
+                        </span>
                       </h2>
 
                       {/* Clean Excerpt */}
@@ -189,12 +215,9 @@ export default function BlogsPage() {
                         <span className="text-xs font-medium text-gray-500 truncate max-w-[150px]">
                           By {blog.authorName || "Anonymous"}
                         </span>
-                        <Link
-                          href={`/blogs/${blog._id}`}
-                          className="text-sm font-semibold text-purple-600 hover:text-purple-800 flex items-center transition"
-                        >
+                        <span className="text-sm font-semibold text-purple-600 hover:text-purple-800 flex items-center transition">
                           Read More →
-                        </Link>
+                        </span>
                       </div>
                     </div>
                   </Link>
