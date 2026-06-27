@@ -1,8 +1,13 @@
+// Refactored version based on your reference.
+// Replace the contents of this file with the final merged component as needed.
+
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 interface BlogObject {
   _id: string;
   title: string;
@@ -13,98 +18,80 @@ interface BlogObject {
   createdAt: string;
 }
 
-export default function BlogsPage() {
+export default function YourBlogs() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [search, setSearch] = useState("");
   const [blogs, setBlogs] = useState<BlogObject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Search State
-  const [search, setSearch] = useState("");
-
+  // Fallback stock image matching your dashboard styling
   const FALLBACK_IMAGE =
-    "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=800";
+    "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200";
 
+  // 🔐 auth protection
   useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const baseUrl =
-          typeof window !== "undefined" ? window.location.origin : "";
+    if (status === "loading") return;
 
-        const res = await fetch(`${baseUrl}/api/blogs`);
-        const data = await res.json();
+    if (!session) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
 
-        if (data.success) {
-          setBlogs(data.blogs);
-        }
-      } catch (e) {
-        console.error("Error fetching blogs:", e);
-      } finally {
-        setLoading(false);
+  // 📦 fetch blogs
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/blogs?dashboard=true");
+      const data = await res.json();
+
+      if (data.success) {
+        setBlogs(data.blogs);
+      } else {
+        setBlogs([]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchBlogs();
-  }, []);
+  // 🚀 load blogs on mount
+  useEffect(() => {
+    if (session) {
+      fetchBlogs();
+    }
+  }, [session]);
 
-  // Extract excerpt
+  // 📖 open blog using database ID
+  const openBlog = (id: string) => {
+    router.push(`/blogs/${id}`);
+  };
+
+  // ✨ EDITOR.JS JSON EXCERPT EXTRACTOR (Parses Editor.js structure to display readable text)
   const getBlogExcerpt = (jsonString: string) => {
     try {
       const parsed = JSON.parse(jsonString);
-
       if (parsed && Array.isArray(parsed.blocks)) {
         const firstParagraph = parsed.blocks.find(
-          (b: any) => b.type === "paragraph"
+          (b: any) => b.type === "paragraph",
         );
-
-        if (firstParagraph?.data?.text) {
+        if (firstParagraph && firstParagraph.data && firstParagraph.data.text) {
           const text = firstParagraph.data.text.replace(/<[^>]*>/g, "");
           return text.length > 100 ? text.substring(0, 100) + "..." : text;
         }
       }
-    } catch {
+    } catch (e) {
       if (typeof jsonString === "string") {
         return jsonString.length > 100
           ? jsonString.substring(0, 100) + "..."
           : jsonString;
       }
     }
-
     return "Click read more to view the full insights of this post...";
   };
-
-  // Extract image
-  const getBlogCoverImage = (jsonString: string) => {
-    try {
-      if (typeof jsonString === "string" && jsonString.startsWith("http")) {
-        return jsonString;
-      }
-
-      const parsed = JSON.parse(jsonString);
-
-      if (parsed) {
-        if (Array.isArray(parsed.blocks)) {
-          const imageBlock = parsed.blocks.find(
-            (b: any) => b.type === "image"
-          );
-
-          if (imageBlock?.data?.file?.url) return imageBlock.data.file.url;
-
-          if (imageBlock?.data?.url) return imageBlock.data.url;
-
-          const customBlock = parsed.blocks.find(
-            (b: any) => b.url || b.data?.url
-          );
-
-          if (customBlock) return customBlock.url || customBlock.data.url;
-        }
-
-        if (parsed.url) return parsed.url;
-      }
-    } catch {}
-
-    return null;
-  };
-
-  // Filter blogs
   const filteredBlogs = useMemo(() => {
     if (!search.trim()) return blogs;
 
@@ -119,86 +106,38 @@ export default function BlogsPage() {
       );
     });
   }, [blogs, search]);
-
-  if (loading) {
+  if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-        <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-600 font-medium">
-          Loading blog database library...
-        </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-200">
+        <p className="text-gray-600 font-medium">Loading session...</p>
       </div>
     );
   }
 
-  return (<>
-
-    <div className="relative min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-     <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+  return (
+    // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
+    <div className="relative min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
+      {/* Purple Dot Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
 
       {/* Purple Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
-      <div className="max-w-6xl mx-auto">
 
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
-            Our Blog Library
-          </h1>
+      <div className="relative z-10 max-w-5xl mx-auto">
+        {/* Header Section */}
+        <div className="rounded-3xl bg-white border border-purple-100 shadow-xl p-8 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900">Your Blogs</h1>
+            <p className="mt-2 text-gray-600">
+              Manage and view all your published content
+            </p>
+          </div>
 
-          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore our latest articles, insights, and structural update
-            guides.
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="flex justify-center items-center mb-12">
-  <div className="relative w-full max-w-4xl">
-    <input
-      type="text"
-      placeholder="Search by title, author, category..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          // Optional: perform search action here
-        }
-      }}
-      className="w-full rounded-2xl border border-purple-200 bg-white px-6 py-4 pr-16 text-gray-700 shadow-lg shadow-purple-100/40 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-200"
-    />
-
-    <button
-      type="button"
-      onClick={() => {
-        // Optional: perform search action here
-      }}
-      className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-300 hover:bg-purple-100 hover:text-purple-700 cursor-pointer"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
-      </svg>
-    </button>
-  </div>
-</div>
-
-        {/* Create Button */}
-        <div className="flex justify-center sm:justify-end mb-12">
+          {/* ✨ STYLISH CREATE BUTTON CONTAINER */}
           <Link href="/create-blog">
-            <button className="group relative overflow-hidden rounded-2xl bg-linear-to-r from-purple-600 via-purple-700 to-indigo-700 px-7 py-3.5 text-white font-semibold shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex items-center gap-2">
+            <button className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3.5 rounded-2xl font-semibold shadow-md shadow-purple-500/20 hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer text-sm tracking-wide">
               <svg
-                className="w-5 h-5 transition-transform group-hover:rotate-90"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -210,84 +149,155 @@ export default function BlogsPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-
               Create New Blog
             </button>
           </Link>
         </div>
+        <div className="flex justify-center items-center mb-7">
+          <div className="relative w-full max-w-5xl">
+            <input
+              type="text"
+              placeholder="Search by title, author, category..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  // Optional: perform search action here
+                }
+              }}
+              className="w-full rounded-2xl border border-purple-200 bg-white px-6 py-4 pr-16 text-gray-700 shadow-lg shadow-purple-100/40 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-200"
+            />
 
-        {/* Empty */}
-        {filteredBlogs.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl shadow-sm">
-            <p className="text-gray-500 text-lg">
-              No matching blogs found.
-            </p>
+            <button
+              type="button"
+              onClick={() => {
+                // Optional: perform search action here
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-300 hover:bg-purple-100 hover:text-purple-700 cursor-pointer"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredBlogs.map((blog) => {
-              const coverImage = getBlogCoverImage(blog.content);
+        </div>
 
-              return (
-                <article
-                  key={blog._id}
-                  className="flex flex-col bg-white rounded-3xl shadow-md overflow-hidden border border-purple-50 transition hover:shadow-xl"
+        {/* Loading / Content Grid */}
+        {loading ? (
+  <div className="flex flex-col items-center justify-center py-20">
+    <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+    <p className="text-gray-600 font-medium">Loading blogs...</p>
+  </div>
+) : filteredBlogs.length === 0 ? (
+  <div className="text-center py-20 bg-white/20 rounded-3xl shadow-sm">
+            <p className="text-gray-500 text-lg">
+      {search.trim()
+        ? "No matching blogs found."
+        : "No blogs found. Start sharing your ideas!"}
+    </p>
+  </div>
+) : (
+  <div className="grid gap-6 md:grid-cols-2">
+    {filteredBlogs.map((blog: any) => {
+      const imageUrl =
+        blog.image && !blog.image.includes("imgbb.com")
+          ? blog.image
+          : FALLBACK_IMAGE;
+
+      return (
+        <div
+          key={blog._id}
+          onClick={() => openBlog(blog._id)}
+          className="group flex flex-col justify-between overflow-hidden rounded-2xl cursor-pointer bg-white border border-purple-100 shadow-md hover:shadow-xl transition-all duration-300"
+        >
+          {/* 🖼️ Blog Cover Image Container */}
+          <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+            <img
+              src={imageUrl}
+              alt={blog.title}
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => {
+                e.currentTarget.src = FALLBACK_IMAGE;
+              }}
+            />
+
+            {blog.category && (
+              <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm uppercase tracking-wider">
+                {blog.category}
+              </span>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="p-6 flex-1 flex flex-col justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors line-clamp-2">
+                {blog.title}
+              </h2>
+
+              <p className="mt-2 text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                {getBlogExcerpt(blog.content)}
+              </p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <svg
+                    className="w-4 h-4 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+
+                <span className="text-xs font-semibold text-gray-800 truncate">
+                  By {blog.authorName || "Anonymous"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/blogs/edit/${blog._id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs px-3 py-2 rounded-xl transition-colors inline-flex items-center gap-1"
                 >
-                  <Link href={`/blogs/${blog._id}`}>
-                    <div className="relative h-48 overflow-hidden">
-                      <img
-                        src={blog.image || coverImage || FALLBACK_IMAGE}
-                        alt={blog.title}
-                        className="h-full w-full object-cover hover:scale-105 transition"
-                        onError={(e) => {
-                          e.currentTarget.src = FALLBACK_IMAGE;
-                        }}
-                      />
+                  Edit
+                </Link>
 
-                      <span className="absolute top-3 left-3 bg-white/90 text-purple-700 text-xs font-semibold px-2 py-1 rounded-md">
-                        {blog.category || "General"}
-                      </span>
-                    </div>
-
-                    <div className="p-6 flex flex-col flex-1">
-                      <div className="flex justify-end mb-4">
-                        <span className="text-xs text-gray-400">
-                          {new Date(blog.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
-                        </span>
-                      </div>
-
-                      <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 hover:text-purple-600">
-                        {blog.title}
-                      </h2>
-
-                      <p className="text-gray-600 text-sm mb-6 flex-1 line-clamp-3">
-                        {getBlogExcerpt(blog.content)}
-                      </p>
-
-                      <div className="pt-4 border-t flex justify-between">
-                        <span className="text-xs text-gray-500 truncate">
-                          By {blog.authorName || "Anonymous"}
-                        </span>
-
-                        <span className="text-sm font-semibold text-purple-600">
-                          Read More →
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </article>
-              );
+                <button className="text-purple-600 font-semibold text-sm group-hover:text-purple-700 inline-flex items-center gap-1">
+                  Read More
+                  <span className="group-hover:translate-x-1 transition-transform">
+                    →
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
             })}
           </div>
         )}
       </div>
     </div>
-    </>
   );
 }
