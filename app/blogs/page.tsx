@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 interface BlogObject {
   _id: string;
   title: string;
-  content: string; // JSON block string payload from Editor.js or direct URL string
+  content: string;
   category?: string;
   authorName?: string;
   image?: string;
@@ -17,7 +17,9 @@ export default function BlogsPage() {
   const [blogs, setBlogs] = useState<BlogObject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fallback beautiful geometric banner if no image is uploaded
+  // Search State
+  const [search, setSearch] = useState("");
+
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=800";
 
@@ -26,6 +28,7 @@ export default function BlogsPage() {
       try {
         const baseUrl =
           typeof window !== "undefined" ? window.location.origin : "";
+
         const res = await fetch(`${baseUrl}/api/blogs`);
         const data = await res.json();
 
@@ -33,70 +36,89 @@ export default function BlogsPage() {
           setBlogs(data.blogs);
         }
       } catch (e) {
-        console.error("Error fetching blogs data matrix:", e);
+        console.error("Error fetching blogs:", e);
       } finally {
         setLoading(false);
       }
     };
+
     fetchBlogs();
   }, []);
 
-  // ✨ EDITOR.JS JSON EXCERPT EXTRACTOR
+  // Extract excerpt
   const getBlogExcerpt = (jsonString: string) => {
     try {
       const parsed = JSON.parse(jsonString);
+
       if (parsed && Array.isArray(parsed.blocks)) {
         const firstParagraph = parsed.blocks.find(
-          (b: any) => b.type === "paragraph",
+          (b: any) => b.type === "paragraph"
         );
-        if (firstParagraph && firstParagraph.data && firstParagraph.data.text) {
+
+        if (firstParagraph?.data?.text) {
           const text = firstParagraph.data.text.replace(/<[^>]*>/g, "");
           return text.length > 100 ? text.substring(0, 100) + "..." : text;
         }
       }
-    } catch (e) {
+    } catch {
       if (typeof jsonString === "string") {
         return jsonString.length > 100
           ? jsonString.substring(0, 100) + "..."
           : jsonString;
       }
     }
+
     return "Click read more to view the full insights of this post...";
   };
 
-  // ✨ ROBUST THUMBNAIL/IMAGE URL EXTRACTOR
-  // Handles EditorJS block layouts, direct HTTP URL strings, and custom JSON upload keys
+  // Extract image
   const getBlogCoverImage = (jsonString: string) => {
     try {
-      // Attempt 1: If content is saved directly as an HTTP/HTTPS URL string
       if (typeof jsonString === "string" && jsonString.startsWith("http")) {
         return jsonString;
       }
 
-      // Attempt 2: Parse structured JSON payload
       const parsed = JSON.parse(jsonString);
+
       if (parsed) {
-        // Standard Editor.js image block layout (e.g., image tool)
         if (Array.isArray(parsed.blocks)) {
-          const imageBlock = parsed.blocks.find((b: any) => b.type === "image");
+          const imageBlock = parsed.blocks.find(
+            (b: any) => b.type === "image"
+          );
+
           if (imageBlock?.data?.file?.url) return imageBlock.data.file.url;
+
           if (imageBlock?.data?.url) return imageBlock.data.url;
 
-          // Check for custom url parameters residing in content blocks
           const customBlock = parsed.blocks.find(
-            (b: any) => b.url || b.data?.url,
+            (b: any) => b.url || b.data?.url
           );
+
           if (customBlock) return customBlock.url || customBlock.data.url;
         }
 
-        // Attempt 3: Direct check if uploaded payload/URL sits at root level
         if (parsed.url) return parsed.url;
       }
-    } catch (e) {
-      // Gracefully bypass if string isn't JSON
-    }
+    } catch {}
+
     return null;
   };
+
+  // Filter blogs
+  const filteredBlogs = useMemo(() => {
+    if (!search.trim()) return blogs;
+
+    return blogs.filter((blog) => {
+      const query = search.toLowerCase();
+
+      return (
+        blog.title.toLowerCase().includes(query) ||
+        (blog.category || "").toLowerCase().includes(query) ||
+        (blog.authorName || "").toLowerCase().includes(query) ||
+        getBlogExcerpt(blog.content).toLowerCase().includes(query)
+      );
+    });
+  }, [blogs, search]);
 
   if (loading) {
     return (
@@ -109,30 +131,74 @@ export default function BlogsPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  return (<>
+
+    <div className="relative min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+     <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+
+      {/* Purple Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
       <div className="max-w-6xl mx-auto">
-        
-        {/* Header Section */}
+
+        {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
             Our Blog Library
           </h1>
+
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore our latest articles, insights, and structural update guides.
+            Explore our latest articles, insights, and structural update
+            guides.
           </p>
         </div>
 
-        {/* ✨ DESIGNED CREATE NEW BLOG BUTTON */}
+        {/* Search */}
+        <div className="flex justify-center items-center mb-12">
+  <div className="relative w-full max-w-4xl">
+    <input
+      type="text"
+      placeholder="Search by title, author, category..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          // Optional: perform search action here
+        }
+      }}
+      className="w-full rounded-2xl border border-purple-200 bg-white px-6 py-4 pr-16 text-gray-700 shadow-lg shadow-purple-100/40 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-200"
+    />
+
+    <button
+      type="button"
+      onClick={() => {
+        // Optional: perform search action here
+      }}
+      className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-300 hover:bg-purple-100 hover:text-purple-700 cursor-pointer"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+    </button>
+  </div>
+</div>
+
+        {/* Create Button */}
         <div className="flex justify-center sm:justify-end mb-12">
           <Link href="/create-blog">
-            <button className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 px-7 py-3.5 text-white font-semibold shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/40 cursor-pointer flex items-center gap-2 border border-purple-500/30">
-              {/* Shine / Light effect on hover */}
-              <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
-
-              {/* Animated Plus Icon */}
+            <button className="group relative overflow-hidden rounded-2xl bg-linear-to-r from-purple-600 via-purple-700 to-indigo-700 px-7 py-3.5 text-white font-semibold shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer flex items-center gap-2">
               <svg
-                className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300"
+                className="w-5 h-5 transition-transform group-hover:rotate-90"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -144,78 +210,72 @@ export default function BlogsPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              <span className="relative">Create New Blog</span>
+
+              Create New Blog
             </button>
           </Link>
         </div>
 
-        {/* Blogs Grid */}
-        {blogs.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-purple-50 max-w-lg mx-auto">
-            <p className="text-gray-500 text-lg font-medium">
-              No blog posts found.
+        {/* Empty */}
+        {filteredBlogs.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl shadow-sm">
+            <p className="text-gray-500 text-lg">
+              No matching blogs found.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {blogs.map((blog) => {
+            {filteredBlogs.map((blog) => {
               const coverImage = getBlogCoverImage(blog.content);
 
               return (
                 <article
                   key={blog._id}
-                  className="flex flex-col bg-white rounded-3xl shadow-md overflow-hidden border border-purple-50/80 transition hover:shadow-xl hover:border-purple-100"
+                  className="flex flex-col bg-white rounded-3xl shadow-md overflow-hidden border border-purple-50 transition hover:shadow-xl"
                 >
-                  {/* 🖼️ COVER IMAGE CONTAINER WITH FALLBACK INTEGRATION */}
                   <Link href={`/blogs/${blog._id}`}>
-                    <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+                    <div className="relative h-48 overflow-hidden">
                       <img
                         src={blog.image || coverImage || FALLBACK_IMAGE}
                         alt={blog.title}
-                        className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                        className="h-full w-full object-cover hover:scale-105 transition"
                         onError={(e) => {
                           e.currentTarget.src = FALLBACK_IMAGE;
                         }}
                       />
 
-                      {/* Category Tag overlay */}
-                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm uppercase tracking-wider">
+                      <span className="absolute top-3 left-3 bg-white/90 text-purple-700 text-xs font-semibold px-2 py-1 rounded-md">
                         {blog.category || "General"}
                       </span>
                     </div>
 
                     <div className="p-6 flex flex-col flex-1">
-                      {/* Date */}
-                      <div className="flex items-center justify-end mb-4">
+                      <div className="flex justify-end mb-4">
                         <span className="text-xs text-gray-400">
                           {new Date(blog.createdAt).toLocaleDateString(
                             "en-US",
                             {
                               month: "short",
                               day: "numeric",
-                            },
+                            }
                           )}
                         </span>
                       </div>
 
-                      {/* Title */}
-                      <h2 className="text-xl font-bold text-gray-900 mb-3 leading-snug tracking-tight line-clamp-2">
-                        <span className="hover:text-purple-600 transition">
-                          {blog.title}
-                        </span>
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 hover:text-purple-600">
+                        {blog.title}
                       </h2>
 
-                      {/* Clean Excerpt */}
                       <p className="text-gray-600 text-sm mb-6 flex-1 line-clamp-3">
                         {getBlogExcerpt(blog.content)}
                       </p>
 
-                      {/* Footer / Read More */}
-                      <div className="pt-4 border-t border-gray-50 flex items-center justify-between mt-auto">
-                        <span className="text-xs font-medium text-gray-500 truncate max-w-[150px]">
+                      <div className="pt-4 border-t flex justify-between">
+                        <span className="text-xs text-gray-500 truncate">
                           By {blog.authorName || "Anonymous"}
                         </span>
-                        <span className="text-sm font-semibold text-purple-600 hover:text-purple-800 flex items-center transition">
+
+                        <span className="text-sm font-semibold text-purple-600">
                           Read More →
                         </span>
                       </div>
@@ -228,5 +288,6 @@ export default function BlogsPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
