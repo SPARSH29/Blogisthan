@@ -120,7 +120,7 @@ export default function YourBlogs() {
       {/* Purple Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
 
-      <div className="relative z-10 max-w-5xl mx-auto">
+      <div className="relative z-10 max-w-5xl -mt-20 mx-auto">
         {/* Header Section */}
         <div className="rounded-3xl bg-white border border-purple-100 shadow-xl p-8 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
