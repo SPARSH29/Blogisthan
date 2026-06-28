@@ -12,6 +12,7 @@ interface BlogObject {
   authorName?: string;
   image?: string;
   createdAt: string;
+  views: number;
 }
 
 export default function SingleBlogPage() {
@@ -27,7 +28,7 @@ export default function SingleBlogPage() {
       try {
         const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
         const res = await fetch(`${baseUrl}/api/blogs?id=${id}`);
-        const data = await res.json();
+        const data = await res.json();  
         
         if (data.success) {
           setBlog(data.blog);
@@ -39,6 +40,38 @@ export default function SingleBlogPage() {
       }
     };
     if (id) fetchBlog();
+
+    const key = `viewed-${id}`;
+if (!localStorage.getItem(key)) {
+  const timer = setTimeout(async () => {
+    try {
+      await fetch("/api/blogs/views", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      localStorage.setItem(key, "true");
+
+      // Update UI immediately
+      setBlog((prev) =>
+        prev
+          ? {
+              ...prev,
+              views: (prev.views ?? 0) + 1,
+            }
+          : prev
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}
+
   }, [id]);
 
   // ✨ STRUCTURED BLOCKS ENGINE PARSER (Strict JSON parsing designed for Editor.js)
@@ -217,15 +250,40 @@ export default function SingleBlogPage() {
           </h1>
           
           {/* Author Metadata Attribution */}
-          <p className="text-sm text-gray-500 mb-8 pb-6 border-b border-black">
-            By <span className="font-semibold text-gray-700">{blog.authorName || "Anonymous"}</span> • {
-              new Date(blog.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric"
-              })
-            }
-          </p>
+          <div className="mb-8 pb-6 border-b border-black flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div className="text-sm text-gray-500">
+    By{" "}
+    <span className="font-semibold text-gray-700">
+      {blog.authorName || "Anonymous"}
+    </span>{" "}
+    •{" "}
+    {new Date(blog.createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })}
+  </div>
+
+  <div className="inline-flex w-fit items-center gap-2 rounded-full bg-purple-50 border border-purple-100 px-3 py-1.5 text-sm font-medium text-purple-700">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"
+      />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+
+    <span>{Number(blog.views ?? 0).toLocaleString()} Views</span>
+  </div>
+</div>
 
           {/* Structured Block Output Matrix */}
           <div className="max-w-none text-gray-800 break-words">

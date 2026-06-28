@@ -14,6 +14,7 @@ interface BlogObject {
   authorName?: string;
   image?: string;
   createdAt: string;
+  views: number;
 }
 
 export default function YourBlogs() {
@@ -285,10 +286,23 @@ if (!session) return null;
                     />
                   </svg>
                 </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold text-gray-800 truncate">
+                    By {blog.authorName || "Anonymous"}
+                  </span>
 
-                <span className="text-xs font-semibold text-gray-800 truncate">
-                  By {blog.authorName || "Anonymous"}
-                </span>
+                  <span className="text-xs text-gray-500">
+                    Published Article
+                  </span>
+                </div>
+
+                <div className="ml-3 inline-flex items-center gap-1.5 rounded-full bg-purple-50 border border-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  {(blog.views ?? 0).toLocaleString()}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

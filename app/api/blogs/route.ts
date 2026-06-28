@@ -69,6 +69,11 @@ export async function GET(req: Request) {
 
     // 💡 CASE 3: Global Explore Feed (🌐 PUBLIC - NO LOGIN REQUIRED)
     const blogs = await Blog.find({}).sort({ createdAt: -1 });
+return NextResponse.json({
+  success: true,
+  blogs,
+});
+
     return NextResponse.json({ success: true, blogs });
 
   } catch (error: any) {

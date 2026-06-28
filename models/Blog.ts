@@ -11,6 +11,7 @@ export interface IBlog {
   authorName?: string;
   authorEmail?: string;
   slug: string;
+  views: number;
 }
 
 // 2. Define the schema
@@ -24,8 +25,9 @@ const BlogSchema = new mongoose.Schema<IBlog>(
     authorName: String,
     authorEmail: String,
     slug: { type: String, required: true, unique: true },
+    views: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // 3. Hook: Clean, typed, synchronous hook (NO 'next' callback)
@@ -42,6 +44,8 @@ BlogSchema.pre("validate", function (this: Document & IBlog) {
 });
 
 // 4. Safe Export using Mongoose's cache system
-const Blog = (mongoose.models.Blog as Model<IBlog>) || mongoose.model<IBlog>("Blog", BlogSchema);
+const Blog =
+  (mongoose.models.Blog as Model<IBlog>) ||
+  mongoose.model<IBlog>("Blog", BlogSchema);
 
 export default Blog;

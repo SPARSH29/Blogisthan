@@ -55,7 +55,7 @@ export default function WordPressEditor({ data, onChange }: EditorProps) {
   }, []);
 
   return (
-      <div className="w-full max-w-5xl mx-auto border border-gray-200 rounded-2xl bg-white p-4 sm:p-6 shadow-inner min-h-[350px] overflow-hidden">
+      <div className="w-full max-w-5xl mx-auto border border-gray-200 rounded-2xl bg-white p-4 sm:p-6 m-2 shadow-inner min-h-[350px] overflow-hidden">
       <div id="editorjs-container" className="prose max-w-none text-gray-900" />
     </div>
   );
