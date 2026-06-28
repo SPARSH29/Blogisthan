@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 
 interface BlogObject {
   _id: string;
@@ -143,7 +144,10 @@ export default function SingleBlogPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="z-10 bg-gray-200 flex flex-col items-center justify-center min-h-screen">
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
         <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-gray-600 font-medium">Assembling article views...</p>
       </div>
@@ -152,17 +156,41 @@ export default function SingleBlogPage() {
 
   if (!blog) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="rounded-2xl bg-white p-8 shadow-sm text-center border border-purple-100 max-w-sm">
-          <p className="text-gray-700 text-lg font-medium">Blog post content data missing.</p>
+      <div className="z-10 bg-gray-200 min-h-screen flex items-center justify-center p-4">
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
+        <div className="rounded-2xl p-8 shadow-sm text-center border border-purple-100 max-w-sm">
+          <p className="text-gray-700 text-lg px-2 py-4 font-medium">Blog post not found.</p>
+          <Link href="/create-blog">
+            <button className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3.5 rounded-2xl font-semibold shadow-md shadow-purple-500/20 hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer text-sm tracking-wide">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Create New Blog
+            </button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <article className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-purple-50">
+    <div className="z-10 min-h-screen py-12 bg-gray-200 px-4 sm:px-6 lg:px-8">
+      <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
+      <article className="max-w-3xl mx-auto rounded-3xl shadow-xl overflow-hidden border border-purple-50">
         
         {/* ✨ STYLISH BANNER COVER IMAGE SECTION */}
         <div className="relative w-full h-64 sm:h-80 md:h-96 bg-gray-100">
@@ -189,7 +217,7 @@ export default function SingleBlogPage() {
           </h1>
           
           {/* Author Metadata Attribution */}
-          <p className="text-sm text-gray-500 mb-8 pb-6 border-b border-gray-100">
+          <p className="text-sm text-gray-500 mb-8 pb-6 border-b border-black">
             By <span className="font-semibold text-gray-700">{blog.authorName || "Anonymous"}</span> • {
               new Date(blog.createdAt).toLocaleDateString("en-US", {
                 year: "numeric",
