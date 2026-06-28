@@ -132,7 +132,7 @@ if (!session) return null;
 
   return (
     // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
-    <div className="relative min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
+    <div className="min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
       {/* Purple Dot Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
 

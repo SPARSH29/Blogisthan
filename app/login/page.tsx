@@ -30,7 +30,7 @@ if (status === "authenticated") {
 }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gray-200 px-4 overflow-hidden">
+    <div className=" min-h-screen flex items-center justify-center bg-gray-200 px-4 overflow-hidden">
       {/* Purple Dot Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
 

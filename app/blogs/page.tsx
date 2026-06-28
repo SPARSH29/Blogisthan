@@ -99,7 +99,7 @@ export default function YourBlogs() {
 
   return (
     // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
-    <div className="relative min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
+    <div className=" min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
       {/* Purple Dot Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
 
@@ -110,9 +110,9 @@ export default function YourBlogs() {
         {/* Header Section */}
         <div className="rounded-3xl bg-white border border-purple-100 shadow-xl p-8 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Your Blogs</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Blogs</h1>
             <p className="mt-2 text-gray-600">
-              Manage and view all your published content
+              View all blogs published by users around the world!
             </p>
           </div>
 

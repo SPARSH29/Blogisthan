@@ -11,13 +11,6 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
-#nprogress {
-  top: 0 !important;
-}
-
-#nprogress .bar {
-  top: 64px !important;
-}
   
 body {
   background: var(--background);

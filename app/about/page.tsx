@@ -2,7 +2,7 @@ import React from 'react'
 
 const About = () => {
   return (
-<div className="relative min-h-screen bg-gray-200 overflow-hidden">
+<div className=" min-h-screen bg-gray-200 overflow-hidden">
   {/* Purple Dot Background */}
   <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
 

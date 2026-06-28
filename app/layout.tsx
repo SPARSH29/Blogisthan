@@ -42,7 +42,7 @@ export default function RootLayout({
             shadow={false}
             showSpinner={false}
           />
-
+  
           {children}
 
           <Footer />
