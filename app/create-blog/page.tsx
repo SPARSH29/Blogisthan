@@ -108,8 +108,12 @@ if (!session) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white my-10 rounded-3xl shadow-xl border border-gray-100">
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-6 tracking-tight">Gutenberg Block Editor</h1>
+    <div className="bg-gray-200 z-10">
+    <div className="max-w-4xl z-10 bg-gray-200 mx-auto p-6 my-10 rounded-3xl shadow-xl border border-gray-100">
+      <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-6 tracking-tight"></h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Large Title Input */}
@@ -118,7 +122,7 @@ if (!session) {
           placeholder="New Post Title..." 
           value={title} 
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full text-4xl font-bold bg-transparent border-b border-gray-100 py-2 focus:outline-none focus:border-purple-500 text-gray-900 placeholder-gray-300"
+          className="w-full text-4xl placeholder:text-gray font-bold bg-transparent border-b border-black py-2 focus:outline-none focus:border-purple-500 text-gray-900"
           required
         />
 
@@ -131,7 +135,7 @@ if (!session) {
               placeholder="e.g. Design, Development" 
               value={category} 
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+              className="w-full px-4 py-2.5 rounded-xl border border-black text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
             />
           </div>
 
@@ -143,7 +147,7 @@ if (!session) {
               placeholder="https://images.unsplash.com/... or paste image path" 
               value={image} 
               onChange={(e) => setImage(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+              className="w-full px-4 py-2.5 rounded-xl border border-black text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
             />
           </div>
         </div>
@@ -164,6 +168,7 @@ if (!session) {
           </button>
         </div>
       </form>
+    </div>
     </div>
   );
 }

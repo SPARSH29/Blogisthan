@@ -202,9 +202,12 @@ export default function EditBlogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32">
+    <div className="min-h-screen z-10 bg-gray-200 py-12 px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32">
+      <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
       <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl p-6 sm:p-10 border border-purple-50">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-6 tracking-tight">
+        <h1 className="text-4xl font-bold text-gray-900 mb-6 tracking-tight">
           Edit Blog Post
         </h1>
 
