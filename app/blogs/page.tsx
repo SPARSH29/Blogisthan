@@ -5,9 +5,10 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import BlogCardSkeleton from "@/app/components/BlogCardSkeleton";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+
 interface BlogObject {
   _id: string;
   title: string;
@@ -20,7 +21,6 @@ interface BlogObject {
 
 export default function YourBlogs() {
   const router = useRouter();
-  const { data: session, status } = useSession();
   const [search, setSearch] = useState("");
   const [blogs, setBlogs] = useState<BlogObject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,21 +29,13 @@ export default function YourBlogs() {
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200";
 
-  // 🔐 auth protection
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/login");
-    }
-  }, [session, status, router]);
 
   // 📦 fetch blogs
   const fetchBlogs = async () => {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/blogs?dashboard=true");
+      const res = await fetch("/api/blogs");
       const data = await res.json();
 
       if (data.success) {
@@ -60,10 +52,8 @@ export default function YourBlogs() {
 
   // 🚀 load blogs on mount
   useEffect(() => {
-    if (session) {
       fetchBlogs();
-    }
-  }, [session]);
+  }, []);
 
   // 📖 open blog using database ID
   const openBlog = (id: string) => {
@@ -106,13 +96,6 @@ export default function YourBlogs() {
       );
     });
   }, [blogs, search]);
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-200">
-        <p className="text-gray-600 font-medium">Loading session...</p>
-      </div>
-    );
-  }
 
   return (
     // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
@@ -195,9 +178,10 @@ export default function YourBlogs() {
 
         {/* Loading / Content Grid */}
         {loading ? (
-  <div className="flex flex-col items-center justify-center py-20">
-    <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-    <p className="text-gray-600 font-medium">Loading blogs...</p>
+  <div className="grid gap-6 md:grid-cols-2">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <BlogCardSkeleton key={index} />
+    ))}
   </div>
 ) : filteredBlogs.length === 0 ? (
   <div className="text-center py-20 bg-white/20 rounded-3xl shadow-sm">

@@ -56,7 +56,7 @@ const Navbar = () => {
 
           {/* Login/Logout Button - Always Visible */}
           <Link href={session ? "/logout" : "/login"}>
-            <button className="bg-white text-black font-bold py-1 px-3 rounded hover:bg-gray-200 hover:scale-105 transition">
+            <button className="bg-white cursor-pointer text-black font-bold py-1 px-3 rounded hover:bg-gray-200 hover:scale-105 transition">
               {session ? "Logout" : "Login"}
             </button>
           </Link>

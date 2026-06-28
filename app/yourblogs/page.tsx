@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
+import BlogCardSkeleton from "../components/BlogCardSkeleton";
 import { useSession } from "next-auth/react";
 interface BlogObject {
   _id: string;
@@ -103,13 +104,31 @@ export default function YourBlogs() {
       );
     });
   }, [blogs, search]);
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-200">
-        <p className="text-gray-600 font-medium">Loading session...</p>
+  if (status === "loading") {
+  return (
+    <div className="relative min-h-screen bg-gray-200 px-6 py-10 pt-28 sm:pt-32 animate-pulse">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-3xl p-8 shadow-xl">
+          <div className="h-10 w-56 rounded bg-gray-200 mb-4" />
+          <div className="h-5 w-80 rounded bg-gray-200" />
+        </div>
+
+        {/* Search */}
+        <div className="h-14 bg-white rounded-2xl mt-8" />
+
+        {/* Cards */}
+        <div className="grid gap-6 md:grid-cols-2 mt-8">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <BlogCardSkeleton key={index} />
+          ))}
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+if (!session) return null;
 
   return (
     // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
@@ -192,11 +211,12 @@ export default function YourBlogs() {
 
         {/* Loading / Content Grid */}
         {loading ? (
-  <div className="flex flex-col items-center justify-center py-20">
-    <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-    <p className="text-gray-600 font-medium">Loading blogs...</p>
+  <div className="grid gap-6 md:grid-cols-2">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <BlogCardSkeleton key={index} />
+    ))}
   </div>
-) : filteredBlogs.length === 0 ? (
+): filteredBlogs.length === 0 ? (
   <div className="text-center py-20 bg-white/20 rounded-3xl shadow-sm">
             <p className="text-gray-500 text-lg">
       {search.trim()

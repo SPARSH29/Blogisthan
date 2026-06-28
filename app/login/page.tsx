@@ -8,8 +8,26 @@ import { useEffect } from "react";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
-const { data: session } = useSession();
+const { data: session, status } = useSession();
 const router = useRouter();
+
+useEffect(() => {
+  if (status === "authenticated") {
+    router.replace("/");
+  }
+}, [status, router]);
+
+if (status === "loading") {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-200">
+      <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+if (status === "authenticated") {
+  return null;
+}
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-200 px-4 overflow-hidden">

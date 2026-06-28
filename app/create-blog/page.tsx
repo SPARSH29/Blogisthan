@@ -4,24 +4,77 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
+import { useEffect } from "react";
 
 // Dynamically load our block designer module safely without SSR compilation errors
 const WordPressEditor = dynamic(() => import("@/app/components/WordPressEditor"), { ssr: false });
 
 export default function CreateBlog() {
 
-  const router = useRouter();
-  const { data: session, status } = useSession();
-  
-  if(!session){
-    router.push("/login")
-  }
+const { data: session, status } = useSession();
+const router = useRouter();
 
-  const [title, setTitle] = useState("");
+ const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [image, setImage] = useState(""); // 📸 NEW: Holds the thumbnail cover image URL string
   const [blocksData, setBlocksData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+  if (status === "unauthenticated") {
+    router.replace("/login");
+  }
+}, [status, router]);
+
+if (status === "loading") {
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white my-10 rounded-3xl shadow-xl border border-gray-100 animate-pulse">
+      {/* Heading */}
+      <div className="h-10 w-72 bg-gray-200 rounded mb-8" />
+
+      {/* Title */}
+      <div className="h-12 w-full bg-gray-200 rounded mb-8" />
+
+      {/* Category & Image */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div>
+          <div className="h-4 w-24 bg-gray-200 rounded mb-3" />
+          <div className="h-11 w-full bg-gray-200 rounded-xl" />
+        </div>
+
+        <div>
+          <div className="h-4 w-40 bg-gray-200 rounded mb-3" />
+          <div className="h-11 w-full bg-gray-200 rounded-xl" />
+        </div>
+      </div>
+
+      {/* Editor */}
+      <div className="mb-8">
+        <div className="h-4 w-40 bg-gray-200 rounded mb-3" />
+
+        <div className="rounded-2xl border border-gray-200 p-6 space-y-4">
+          <div className="h-5 w-full bg-gray-200 rounded" />
+          <div className="h-5 w-5/6 bg-gray-200 rounded" />
+          <div className="h-5 w-full bg-gray-200 rounded" />
+          <div className="h-5 w-4/6 bg-gray-200 rounded" />
+          <div className="h-5 w-full bg-gray-200 rounded" />
+          <div className="h-5 w-3/4 bg-gray-200 rounded" />
+        </div>
+      </div>
+
+      {/* Button */}
+      <div className="flex justify-end">
+        <div className="h-12 w-48 bg-gray-200 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+if (!session) {
+  return null;
+}
+
+ 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

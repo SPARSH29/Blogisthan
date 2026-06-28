@@ -83,42 +83,67 @@ export default function EditBlogPage() {
     }
 
     const fetchBlogDetails = async () => {
-      try {
-        const res = await fetch(`/api/blogs?id=${id}`);
-        const data = await res.json();
+  try {
+    setLoading(true);
 
-        if (data.success && data.blog) {
-          // Security Check: Verify if logged-in user matches the blog author
-          const blogAuthorId = data.blog.authorId || data.blog.userId;
-          const sessionUserId = (session?.user as any)?.id || (session?.user as any)?._id;
+    const res = await fetch(`/api/blogs?id=${id}`);
+    const data = await res.json();
 
-          if (blogAuthorId !== sessionUserId && data.blog.authorEmail !== session?.user?.email) {
-            setMessage({ text: "Unauthorized! You can only edit your own blogs.", type: "error" });
-            setTimeout(() => router.push("/yourblogs"), 2000);
-            return;
-          }
+    if (!data.success || !data.blog) {
+      setMessage({
+        text: "Blog not found.",
+        type: "error",
+      });
 
-          setTitle(data.blog.title || "");
-          setRawJson(data.blog.content || ""); // Store original raw payload in state
-          
-          // Populate textarea with clean, normal text
-          const readableText = parseJsonToPlainText(data.blog.content || "");
-          setContent(readableText);
+      setTimeout(() => {
+        router.replace("/yourblogs");
+      }, 1500);
 
-          setCategory(data.blog.category || "");
-          setImage(data.blog.image || "");
-        } else {
-          setMessage({ text: "Blog post not found.", type: "error" });
-          setTimeout(() => router.push("/yourblogs"), 2000);
-        }
-      } catch (error) {
-        console.error("Failed to fetch blog:", error);
-        router.push("/yourblogs");
-      } finally {
-        setLoading(false);
-      }
-    };
+      return;
+    }
 
+    // Get the blog author's email
+    const authorEmail = data.blog.authorEmail || data.blog.email;
+
+    // Get logged-in user's email
+    const userEmail = session?.user?.email;
+
+    // Only allow the author to edit
+    if (!userEmail || authorEmail !== userEmail) {
+      setMessage({
+        text: "Unauthorized! You can only edit your own blogs.",
+        type: "error",
+      });
+
+      setTimeout(() => {
+        router.replace("/yourblogs");
+      }, 1500);
+
+      return;
+    }
+
+    // Populate form
+    setTitle(data.blog.title || "");
+    setRawJson(data.blog.content || "");
+    setContent(parseJsonToPlainText(data.blog.content || ""));
+    setCategory(data.blog.category || "");
+    setImage(data.blog.image || "");
+
+  } catch (error) {
+    console.error("Failed to fetch blog:", error);
+
+    setMessage({
+      text: "Something went wrong.",
+      type: "error",
+    });
+
+    setTimeout(() => {
+      router.replace("/yourblogs");
+    }, 1500);
+  } finally {
+    setLoading(false);
+  }
+};
     if (id) fetchBlogDetails();
   }, [id, session, status, router]);
 
