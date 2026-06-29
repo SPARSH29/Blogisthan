@@ -5,6 +5,18 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import redis from "@/lib/redis";
 
+// Helper function to clear paginated blog caches
+async function invalidateBlogCaches() {
+  try {
+    const keys = await redis.keys("blogs:*");
+    if (keys.length > 0) {
+      await redis.del(keys);
+    }
+  } catch (err) {
+    console.error("Failed to clear Redis cache:", err);
+  }
+}
+
 // 🚀 POST: Creates a new blog (STRICTLY REQUIRED LOGIN)
 export async function POST(req: Request) {
   try {
@@ -30,6 +42,9 @@ export async function POST(req: Request) {
       authorName: session.user.name || "Anonymous",
       authorEmail: session.user.email,
     });
+
+    // Invalidate the explore/paginated cache when a new blog is added
+    await invalidateBlogCaches();
 
     return NextResponse.json({ success: true, blog });
   } catch (error: any) {
@@ -71,30 +86,46 @@ export async function GET(req: Request) {
     }
 
     // 🔐 DASHBOARD BLOGS
-    if (dashboardOnly === "true") {
-      const session = await getServerSession(authOptions);
+if (dashboardOnly === "true") {
+  const session = await getServerSession(authOptions);
 
-      if (!session?.user?.email) {
-        return NextResponse.json(
-          { success: false, error: "Unauthorized" },
-          { status: 401 }
-        );
-      }
+  if (!session?.user?.email) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
-      const blogs = await Blog.find({
-        authorEmail: session.user.email,
-      })
-        .sort({ createdAt: -1 })
-        .select("title image category views createdAt");
+  // Combine author email constraint with any search terms
+  let query: any = { authorEmail: session.user.email };
 
-      return NextResponse.json({
-        success: true,
-        blogs,
-      });
-    }
+  if (search.trim()) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { category: { $regex: search, $options: "i" } },
+      { authorName: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Count only this author's blogs matching the query for accurate pagination
+  const totalBlogs = await Blog.countDocuments(query);
+
+  const blogs = await Blog.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .select("title image category authorName views createdAt");
+
+  return NextResponse.json({
+    success: true,
+    blogs,
+    page,
+    totalPages: Math.ceil(totalBlogs / limit),
+    totalBlogs,
+  });
+}
 
     // 🌐 EXPLORE BLOGS (CACHE + OPTIMIZED)
-
     const cacheKey = `blogs:${page}:${limit}:${search.trim()}`;
 
     // 1. Check Redis cache
@@ -127,13 +158,13 @@ export async function GET(req: Request) {
 
     // 4. Fetch optimized blogs (NO heavy content field)
     const blogs = await Blog.find(query)
-      .select("title image category authorName views createdAt")
+      .select("title image category content authorName views createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    // 5. Store in Redis (cache for 3000s)
-    await redis.setEx(cacheKey, 3000, JSON.stringify(blogs));
+    // 5. Store in Redis (cache for 300s)
+    await redis.setEx(cacheKey, 300, JSON.stringify(blogs));
 
     return NextResponse.json({
       success: true,
@@ -206,6 +237,9 @@ export async function PUT(req: Request) {
       { new: true, runValidators: true } // Returns the updated document and runs validation
     );
 
+    // Invalidate the explore/paginated cache when a blog is modified
+    await invalidateBlogCaches();
+
     return NextResponse.json({ success: true, blog: updatedBlog });
 
   } catch (error: any) {
@@ -213,4 +247,3 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: false, error: error.message || "Failed to update blog" }, { status: 500 });
   }
 }
-

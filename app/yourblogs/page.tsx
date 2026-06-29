@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-
 import { useRouter } from "next/navigation";
 import BlogCardSkeleton from "../components/BlogCardSkeleton";
 import { useSession } from "next-auth/react";
+
 interface BlogObject {
   _id: string;
   title: string;
@@ -30,7 +30,7 @@ export default function YourBlogs() {
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200";
 
-  // 🔐 auth protection
+  // 🔐 Auth protection
   useEffect(() => {
     if (status === "loading") return;
 
@@ -39,70 +39,78 @@ export default function YourBlogs() {
     }
   }, [session, status, router]);
 
-  // 📦 fetch blogs
+  // 📦 Fetch blogs (Added &dashboard=true so it filters exclusively for the author's blogs)
   const fetchBlogs = async () => {
+    if (!session?.user?.email) return;
+
     try {
       setLoading(true);
 
       const res = await fetch(
-        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(search)}`,
+        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(
+          search
+        )}&dashboard=true`
       );
       const data = await res.json();
 
       if (data.success) {
-        setBlogs(data.blogs);
-        setTotalPages(data.totalPages);
+        setBlogs(data.blogs || []);
+        
+        // Ensure totalPages is safely parsed as a valid number, defaulting to 1
+        const parsedTotal = parseInt(data.totalPages, 10);
+        setTotalPages(isNaN(parsedTotal) ? 1 : Math.max(1, parsedTotal));
       } else {
         setBlogs([]);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);
+      setBlogs([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🚀 load blogs on mount
+  // 🚀 Load blogs on mount & when dependencies change. 
+  // Consolidated into a single useEffect to avoid duplicate/race-condition requests
   useEffect(() => {
     if (session) {
       fetchBlogs();
     }
-  }, [session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, page, search]);
 
-  // 📖 open blog using database ID
+  // 📖 Open blog using database ID
   const openBlog = (id: string) => {
     router.push(`/blogs/${id}`);
   };
 
-  // ✨ EDITOR.JS JSON EXCERPT EXTRACTOR (Parses Editor.js structure to display readable text)
-  const getBlogExcerpt = (jsonString: string) => {
+  // ✨ EDITOR.JS JSON EXCERPT EXTRACTOR
+  const getBlogExcerpt = (jsonString: string | null | undefined): string => {
+    if (!jsonString) {
+      return "Click read more to view the full insights of this post...";
+    }
+
     try {
       const parsed = JSON.parse(jsonString);
       if (parsed && Array.isArray(parsed.blocks)) {
         const firstParagraph = parsed.blocks.find(
-          (b: any) => b.type === "paragraph",
+          (b: any) => b.type === "paragraph"
         );
-        if (firstParagraph && firstParagraph.data && firstParagraph.data.text) {
+        if (firstParagraph?.data?.text) {
           const text = firstParagraph.data.text.replace(/<[^>]*>/g, "");
           return text.length > 100 ? text.substring(0, 100) + "..." : text;
         }
       }
     } catch (e) {
-      if (typeof jsonString === "string") {
-        return jsonString.length > 100
-          ? jsonString.substring(0, 100) + "..."
-          : jsonString;
-      }
+      const str = String(jsonString);
+      return str.length > 100 ? str.substring(0, 100) + "..." : str;
     }
-    return "Click read more to view the full insights of this post...";
-  }
 
-    
-  useEffect(() => {
-    fetchBlogs();
-  }, [page, search]);
-  
-  
+    return "Click read more to view the full insights of this post...";
+  };
+
   if (status === "loading") {
     return (
       <div className="relative min-h-screen bg-gray-200 px-6 py-10 pt-28 sm:pt-32 animate-pulse">
@@ -127,11 +135,9 @@ export default function YourBlogs() {
     );
   }
 
-
   if (!session) return null;
 
   return (
-    // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
     <div className="min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
       {/* Purple Dot Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -149,7 +155,7 @@ export default function YourBlogs() {
             </p>
           </div>
 
-          {/* ✨ STYLISH CREATE BUTTON CONTAINER */}
+          {/* Create Button Container */}
           <Link href="/create-blog">
             <button className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3.5 rounded-2xl font-semibold shadow-md shadow-purple-500/20 hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer text-sm tracking-wide">
               <svg
@@ -169,6 +175,7 @@ export default function YourBlogs() {
             </button>
           </Link>
         </div>
+        
         <div className="flex justify-center items-center mb-7">
           <div className="relative w-full max-w-5xl">
             <input
@@ -179,19 +186,11 @@ export default function YourBlogs() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  // Optional: perform search action here
-                }
-              }}
               className="w-full rounded-2xl border border-purple-200 bg-white px-6 py-4 pr-16 text-gray-700 shadow-lg shadow-purple-100/40 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-200"
             />
 
             <button
               type="button"
-              onClick={() => {
-                // Optional: perform search action here
-              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-300 hover:bg-purple-100 hover:text-purple-700 cursor-pointer"
             >
               <svg
@@ -342,6 +341,8 @@ export default function YourBlogs() {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
       <div className="flex justify-center items-center gap-4 mt-10">
         <button
           onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -352,12 +353,14 @@ export default function YourBlogs() {
         </button>
 
         <span className="font-semibold">
-          Page {page} of {totalPages}
+          {/* Safe check rendering defaults if numbers are temporarily missing */}
+          Page {!isNaN(page) ? page : 1} of{" "}
+          {!isNaN(totalPages) ? totalPages : 1}
         </span>
 
         <button
           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page === totalPages}
+          disabled={page === totalPages || totalPages === 0}
           className="px-4 py-2 cursor-pointer bg-purple-600 text-white rounded disabled:opacity-50"
         >
           Next

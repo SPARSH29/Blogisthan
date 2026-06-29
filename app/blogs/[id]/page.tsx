@@ -318,23 +318,30 @@ useEffect(() => {
     router.push(`/blogs/${blogId}`); // change if your route is different
   };
 
-  const getBlogExcerpt = (content: string) => {
+ const getBlogExcerpt = (content: string | undefined | null) => {
+    // 1. Return an empty string or placeholder if content is missing entirely
+    if (!content) return "No content available...";
+
     try {
       const parsed = JSON.parse(content);
 
       if (parsed.blocks) {
         const text = parsed.blocks
           .filter((b: any) => b.type === "paragraph")
-          .map((b: any) => b.data.text.replace(/<[^>]+>/g, ""))
+          .map((b: any) => (b.data.text ? b.data.text.replace(/<[^>]+>/g, "") : ""))
           .join(" ");
 
         return text.slice(0, 120) + "...";
       }
-    } catch {}
+    } catch (e) {
+      // Fallback if JSON parsing fails
+    }
 
-    return content.slice(0, 120) + "...";
+    // Ensure content is treated as a string before slicing
+    const safeContent = typeof content === "string" ? content : "";
+    return safeContent.slice(0, 120) + "...";
   };
-
+  
   const exploreBlogs = blogs
     .filter((item) => item._id !== blog?._id)
     .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
@@ -373,6 +380,43 @@ useEffect(() => {
 
   const scrollLeft = () => smoothScroll(-CARD_WIDTH);
   const scrollRight = () => smoothScroll(CARD_WIDTH);
+
+  // 🚀 Move loading and null state checks to the top so server pre-rendering doesn't crash
+  if (loading) {
+    return (
+      <div className="z-10 bg-gray-200 flex flex-col items-center justify-center min-h-screen">
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
+        <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-600 font-medium">Assembling article views...</p>
+      </div>
+    );
+  }
+
+  if (!blog) {
+    return (
+      <div className="z-10 bg-gray-200 min-h-screen flex items-center justify-center p-4">
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
+        <div className="fixed inset-0 -z-20 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
+
+        <div className="rounded-2xl p-8 shadow-sm text-center border border-purple-100 max-w-sm">
+          <p className="text-gray-700 text-lg px-2 py-4 font-medium">
+            Blog post not found.
+          </p>
+          <Link href="/create-blog">
+            <button className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3.5 rounded-2xl font-semibold shadow-md shadow-purple-500/20 hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer text-sm tracking-wide">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              Create New Blog
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="z-10 min-h-screen py-12 bg-gray-200 px-4 sm:px-6 lg:px-8">
       <div className="fixed inset-0 -z-20 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -383,7 +427,7 @@ useEffect(() => {
         <div className="relative w-full h-64 sm:h-80 md:h-96 bg-gray-100">
           <img
             src={blog.image || FALLBACK_IMAGE}
-            alt={blog.title}
+            alt={blog.title || "Blog banner"}
             className="w-full h-full object-cover transition duration-500 hover:scale-105"
             onError={(e) => {
               e.currentTarget.src = FALLBACK_IMAGE;

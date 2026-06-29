@@ -3,11 +3,12 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import BlogCardSkeleton from "@/app/components/BlogCardSkeleton";
 
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface BlogObject {
   _id: string;
@@ -22,6 +23,7 @@ interface BlogObject {
 
 export default function YourBlogs() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -32,33 +34,53 @@ export default function YourBlogs() {
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200";
 
-  // 📦 fetch blogs
+  // 🔒 Auth protection: Redirect to login if unauthenticated
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
+
+  // 📦 fetch blogs (Added dashboard=true to enforce API limits and ownership queries)
   const fetchBlogs = async () => {
+    if (!session?.user?.email) return;
+
     try {
       setLoading(true);
 
       const res = await fetch(
-        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(search)}`,
+        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(
+          search
+        )}&dashboard=true`
       );
       const data = await res.json();
 
       if (data.success) {
-        setBlogs(data.blogs);
-        setTotalPages(data.totalPages);
+        setBlogs(data.blogs || []);
+        const parsedTotal = parseInt(data.totalPages, 10);
+        setTotalPages(isNaN(parsedTotal) ? 1 : Math.max(1, parsedTotal));
       } else {
         setBlogs([]);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);
+      setBlogs([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🚀 load blogs on mount
+  // 🚀 load blogs on mount and dependencies change
   useEffect(() => {
-    fetchBlogs();
-  }, [page, search]);
+    if (session) {
+      fetchBlogs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, page, search]);
 
   // 📖 open blog using database ID
   const openBlog = (id: string) => {
@@ -66,44 +88,76 @@ export default function YourBlogs() {
   };
 
   // ✨ EDITOR.JS JSON EXCERPT EXTRACTOR (Parses Editor.js structure to display readable text)
-  const getBlogExcerpt = (jsonString: string) => {
+  const getBlogExcerpt = (jsonString: string | null | undefined): string => {
+    // Return a safe fallback immediately if the input is null or undefined
+    if (!jsonString) {
+      return "Click read more to view the full insights of this post...";
+    }
+
     try {
       const parsed = JSON.parse(jsonString);
       if (parsed && Array.isArray(parsed.blocks)) {
         const firstParagraph = parsed.blocks.find(
-          (b: any) => b.type === "paragraph",
+          (b: any) => b.type === "paragraph"
         );
-        if (firstParagraph && firstParagraph.data && firstParagraph.data.text) {
+        // Use optional chaining (?.) to safely dive into nested properties
+        if (firstParagraph?.data?.text) {
           const text = firstParagraph.data.text.replace(/<[^>]*>/g, "");
           return text.length > 100 ? text.substring(0, 100) + "..." : text;
         }
       }
     } catch (e) {
-      if (typeof jsonString === "string") {
-        return jsonString.length > 100
-          ? jsonString.substring(0, 100) + "..."
-          : jsonString;
-      }
+      // If JSON parsing fails (e.g., plain text was passed instead),
+      // convert it to a string and safely extract the substring
+      const str = String(jsonString);
+      return str.length > 100 ? str.substring(0, 100) + "..." : str;
     }
+
     return "Click read more to view the full insights of this post...";
   };
 
+  if (status === "loading") {
+    return (
+      <div className="relative min-h-screen bg-gray-200 px-6 py-10 pt-28 sm:pt-32 animate-pulse">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="bg-white rounded-3xl p-8 shadow-xl">
+            <div className="h-10 w-56 rounded bg-gray-200 mb-4" />
+            <div className="h-5 w-80 rounded bg-gray-200" />
+          </div>
+
+          {/* Search */}
+          <div className="h-14 bg-white rounded-2xl mt-8" />
+
+          {/* Cards */}
+          <div className="grid gap-6 md:grid-cols-2 mt-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <BlogCardSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
   return (
     // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
-    <div className=" min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32">
+    <div className="min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32 relative">
       {/* Purple Dot Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
 
       {/* Purple Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#7c3aed22,transparent_70%)]" />
 
-      <div className="relative z-10 max-w-5xl -mt-20 mx-auto">
+      <div className="relative z-10 max-w-5xl mx-auto">
         {/* Header Section */}
         <div className="rounded-3xl bg-white border border-purple-100 shadow-xl p-8 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Blogs</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Your Blogs</h1>
             <p className="mt-2 text-gray-600">
-              View all blogs published by users around the world!
+              Manage and view all your published content
             </p>
           </div>
 
@@ -127,6 +181,8 @@ export default function YourBlogs() {
             </button>
           </Link>
         </div>
+
+        {/* Search Input Container */}
         <div className="flex justify-center items-center mb-7">
           <div className="relative w-full max-w-5xl">
             <input
@@ -137,19 +193,11 @@ export default function YourBlogs() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  // Optional: perform search action here
-                }
-              }}
               className="w-full rounded-2xl border border-purple-200 bg-white px-6 py-4 pr-16 text-gray-700 shadow-lg shadow-purple-100/40 outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-200"
             />
 
             <button
               type="button"
-              onClick={() => {
-                // Optional: perform search action here
-              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-300 hover:bg-purple-100 hover:text-purple-700 cursor-pointer"
             >
               <svg
@@ -246,7 +294,6 @@ export default function YourBlogs() {
                             />
                           </svg>
                         </div>
-
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-semibold text-gray-800 truncate">
                             By {blog.authorName || "Anonymous"}
@@ -268,17 +315,24 @@ export default function YourBlogs() {
                           >
                             <path
                               strokeLinecap="round"
-                              strokeLinejoin="round"
                               d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"
                             />
                             <circle cx="12" cy="12" r="3" />
                           </svg>
-
-                          {blog.views}
+                          {(blog.views ?? 0).toLocaleString()}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {/* Edit Button directly on author dashboard */}
+                        <Link
+                          href={`/blogs/edit/${blog._id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs px-3 py-2 rounded-xl transition-colors inline-flex items-center gap-1"
+                        >
+                          Edit
+                        </Link>
+
                         <button className="text-purple-600 font-semibold text-sm group-hover:text-purple-700 inline-flex items-center gap-1">
                           Read More
                           <span className="group-hover:translate-x-1 transition-transform">
@@ -293,6 +347,8 @@ export default function YourBlogs() {
             })}
           </div>
         )}
+
+        {/* Pagination Controls */}
         <div className="flex justify-center items-center gap-4 mt-10">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -303,12 +359,14 @@ export default function YourBlogs() {
           </button>
 
           <span className="font-semibold">
-            Page {page} of {totalPages}
+            {/* Safe check rendering defaults if numbers are temporarily missing */}
+            Page {!isNaN(page) ? page : 1} of{" "}
+            {!isNaN(totalPages) ? totalPages : 1}
           </span>
 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            disabled={page === totalPages || totalPages === 0}
             className="px-4 py-2 cursor-pointer bg-purple-600 text-white rounded disabled:opacity-50"
           >
             Next
