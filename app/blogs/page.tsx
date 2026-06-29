@@ -23,6 +23,8 @@ interface BlogObject {
 export default function YourBlogs() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [blogs, setBlogs] = useState<BlogObject[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,11 +37,14 @@ export default function YourBlogs() {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/blogs");
+      const res = await fetch(
+        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(search)}`,
+      );
       const data = await res.json();
 
       if (data.success) {
         setBlogs(data.blogs);
+        setTotalPages(data.totalPages);
       } else {
         setBlogs([]);
       }
@@ -53,7 +58,7 @@ export default function YourBlogs() {
   // 🚀 load blogs on mount
   useEffect(() => {
     fetchBlogs();
-  }, []);
+  }, [page, search]);
 
   // 📖 open blog using database ID
   const openBlog = (id: string) => {
@@ -82,20 +87,6 @@ export default function YourBlogs() {
     }
     return "Click read more to view the full insights of this post...";
   };
-  const filteredBlogs = useMemo(() => {
-    if (!search.trim()) return blogs;
-
-    return blogs.filter((blog) => {
-      const query = search.toLowerCase();
-
-      return (
-        blog.title.toLowerCase().includes(query) ||
-        (blog.category || "").toLowerCase().includes(query) ||
-        (blog.authorName || "").toLowerCase().includes(query) ||
-        getBlogExcerpt(blog.content).toLowerCase().includes(query)
-      );
-    });
-  }, [blogs, search]);
 
   return (
     // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
@@ -142,7 +133,10 @@ export default function YourBlogs() {
               type="text"
               placeholder="Search by title, author, category..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   // Optional: perform search action here
@@ -183,7 +177,7 @@ export default function YourBlogs() {
               <BlogCardSkeleton key={index} />
             ))}
           </div>
-        ) : filteredBlogs.length === 0 ? (
+        ) : blogs.length === 0 ? (
           <div className="text-center py-20 bg-white/20 rounded-3xl shadow-sm">
             <p className="text-gray-500 text-lg">
               {search.trim()
@@ -193,7 +187,7 @@ export default function YourBlogs() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
-            {filteredBlogs.map((blog: any) => {
+            {blogs.map((blog: any) => {
               const imageUrl =
                 blog.image && !blog.image.includes("imgbb.com")
                   ? blog.image
@@ -299,6 +293,27 @@ export default function YourBlogs() {
             })}
           </div>
         )}
+        <div className="flex justify-center items-center gap-4 mt-10">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 cursor-pointer bg-purple-600 text-white rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="font-semibold">
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-4 py-2 cursor-pointer bg-purple-600 text-white rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
