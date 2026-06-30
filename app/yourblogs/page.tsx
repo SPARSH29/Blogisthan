@@ -204,6 +204,7 @@ export default function YourBlogs() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeWidth="2"
                   d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
@@ -304,7 +305,7 @@ export default function YourBlogs() {
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
-                            strokeWidth={2}
+                            strokeWidth="2"
                           >
                             <path
                               strokeLinecap="round"

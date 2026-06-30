@@ -28,16 +28,13 @@ export default function YourBlogs() {
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200";
 
-  // 📦 fetch public blogs with cache-busting timestamp
+  // 📦 fetch public blogs from API route
   const fetchBlogs = async () => {
     try {
       setLoading(true);
 
-      // Added `_t=${Date.now()}` to force a fresh network request and bypass browser/Next.js GET caching
       const res = await fetch(
-        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(
-          search
-        )}&_t=${Date.now()}`
+        `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(search)}`
       );
       const data = await res.json();
 
