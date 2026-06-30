@@ -1,14 +1,9 @@
-// Refactored version based on your reference.
-// Replace the contents of this file with the final merged component as needed.
-
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import BlogCardSkeleton from "@/app/components/BlogCardSkeleton";
-
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 
 interface BlogObject {
   _id: string;
@@ -23,7 +18,6 @@ interface BlogObject {
 
 export default function YourBlogs() {
   const router = useRouter();
-  const { data: session, status } = useSession();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -34,33 +28,24 @@ export default function YourBlogs() {
   const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200";
 
-  // 🔒 Auth protection: Redirect to login if unauthenticated
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/login");
-    }
-  }, [session, status, router]);
-
-  // 📦 fetch blogs (Added dashboard=true to enforce API limits and ownership queries)
+  // 📦 fetch public blogs with cache-busting timestamp
   const fetchBlogs = async () => {
-    if (!session?.user?.email) return;
-
     try {
       setLoading(true);
 
+      // Added `_t=${Date.now()}` to force a fresh network request and bypass browser/Next.js GET caching
       const res = await fetch(
         `/api/blogs?page=${page}&limit=10&search=${encodeURIComponent(
           search
-        )}&dashboard=true`
+        )}&_t=${Date.now()}`
       );
       const data = await res.json();
 
       if (data.success) {
         setBlogs(data.blogs || []);
+        
         const parsedTotal = parseInt(data.totalPages, 10);
-        setTotalPages(isNaN(parsedTotal) ? 1 : Math.max(1, parsedTotal));
+        setTotalPages(isNaN(parsedTotal) || parsedTotal < 1 ? 1 : parsedTotal);
       } else {
         setBlogs([]);
         setTotalPages(1);
@@ -76,11 +61,9 @@ export default function YourBlogs() {
 
   // 🚀 load blogs on mount and dependencies change
   useEffect(() => {
-    if (session) {
-      fetchBlogs();
-    }
+    fetchBlogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, page, search]);
+  }, [page, search]);
 
   // 📖 open blog using database ID
   const openBlog = (id: string) => {
@@ -116,34 +99,7 @@ export default function YourBlogs() {
     return "Click read more to view the full insights of this post...";
   };
 
-  if (status === "loading") {
-    return (
-      <div className="relative min-h-screen bg-gray-200 px-6 py-10 pt-28 sm:pt-32 animate-pulse">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-3xl p-8 shadow-xl">
-            <div className="h-10 w-56 rounded bg-gray-200 mb-4" />
-            <div className="h-5 w-80 rounded bg-gray-200" />
-          </div>
-
-          {/* Search */}
-          <div className="h-14 bg-white rounded-2xl mt-8" />
-
-          {/* Cards */}
-          <div className="grid gap-6 md:grid-cols-2 mt-8">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <BlogCardSkeleton key={index} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) return null;
-
   return (
-    // 🔒 pt-28 and sm:pt-32 adds padding to clear the 64px (h-16) navbar + nprogress bar height
     <div className="min-h-screen overflow-hidden bg-gray-200 px-6 py-10 pt-28 sm:pt-32 relative">
       {/* Purple Dot Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#a855f766_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -155,9 +111,9 @@ export default function YourBlogs() {
         {/* Header Section */}
         <div className="rounded-3xl bg-white border border-purple-100 shadow-xl p-8 mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Your Blogs</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Explore Blogs</h1>
             <p className="mt-2 text-gray-600">
-              Manage and view all your published content
+              Discover our latest collection of insights and stories from around the world!
             </p>
           </div>
 
@@ -324,15 +280,6 @@ export default function YourBlogs() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {/* Edit Button directly on author dashboard */}
-                        <Link
-                          href={`/blogs/edit/${blog._id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs px-3 py-2 rounded-xl transition-colors inline-flex items-center gap-1"
-                        >
-                          Edit
-                        </Link>
-
                         <button className="text-purple-600 font-semibold text-sm group-hover:text-purple-700 inline-flex items-center gap-1">
                           Read More
                           <span className="group-hover:translate-x-1 transition-transform">
@@ -359,7 +306,6 @@ export default function YourBlogs() {
           </button>
 
           <span className="font-semibold">
-            {/* Safe check rendering defaults if numbers are temporarily missing */}
             Page {!isNaN(page) ? page : 1} of{" "}
             {!isNaN(totalPages) ? totalPages : 1}
           </span>
