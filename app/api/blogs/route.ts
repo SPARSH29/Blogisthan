@@ -100,7 +100,7 @@ export async function GET(req: Request) {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select("title image category authorName views createdAt");
+        .select("title content image category authorName views createdAt");
 
       return NextResponse.json(
         {
