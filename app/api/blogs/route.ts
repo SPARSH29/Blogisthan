@@ -131,7 +131,7 @@ export async function GET(req: Request) {
     const totalBlogs = await Blog.countDocuments(query);
 
     const blogs = await Blog.find(query)
-      .select("title image category authorName views createdAt")
+      .select("title image category authorName content views createdAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

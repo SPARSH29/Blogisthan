@@ -320,6 +320,7 @@ useEffect(() => {
 
  const getBlogExcerpt = (content: string | undefined | null) => {
     // 1. Return an empty string or placeholder if content is missing entirely
+
     if (!content) return "No content available...";
 
     try {
